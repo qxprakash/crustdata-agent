@@ -3,6 +3,8 @@ import os
 import dotenv
 import uuid
 
+from utils.constants import DEFAULT_RAG_URLS, MODELS
+
 # check if it's linux so it works on Streamlit Cloud
 if os.name == "posix":
     __import__("pysqlite3")
@@ -14,7 +16,7 @@ from langchain_openai import ChatOpenAI, AzureChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain.schema import HumanMessage, AIMessage
 
-from rag_methods import (
+from utils.rag_utils import (
     load_doc_to_db,
     load_url_to_db,
     stream_llm_response,
@@ -22,21 +24,6 @@ from rag_methods import (
 )
 
 dotenv.load_dotenv()
-
-if "AZ_OPENAI_API_KEY" not in os.environ:
-    MODELS = [
-        # "openai/o1-mini",
-        "openai/gpt-4o",
-        "openai/gpt-4o-mini",
-        "anthropic/claude-3-5-sonnet-20240620",
-    ]
-else:
-    MODELS = ["azure-openai/gpt-4o"]
-
-DEFAULT_RAG_URLS = [
-    "https://crustdata.notion.site/Crustdata-Discovery-And-Enrichment-API-c66d5236e8ea40df8af114f6d447ab48",
-    "https://crustdata.notion.site/Crustdata-Dataset-API-Detailed-Examples-b83bd0f1ec09452bb0c2cac811bba88c#ff964b2e316c49de8770e0bf2cf81f8a",
-]
 
 st.set_page_config(
     page_title="RAG LLM app?",
