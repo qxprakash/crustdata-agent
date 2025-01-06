@@ -54,56 +54,28 @@ if "rag_sources" not in st.session_state:
     st.session_state.rag_sources = []
 
 if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "user", "content": "Hello"},
-        {"role": "assistant", "content": "Hi there! How can I assist you today?"},
-    ]
+    st.session_state.messages = []
 
 
 # --- Side Bar LLM API Tokens ---
 with st.sidebar:
-    if "AZ_OPENAI_API_KEY" not in os.environ:
-        default_openai_api_key = (
-            os.getenv("OPENAI_API_KEY")
-            if os.getenv("OPENAI_API_KEY") is not None
-            else ""
-        )  # only for development environment, otherwise it should return None
-        with st.popover("🔐 OpenAI"):
-            openai_api_key = st.text_input(
-                "Introduce your OpenAI API Key (https://platform.openai.com/)",
-                value=default_openai_api_key,
-                type="password",
-                key="openai_api_key",
-            )
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+    az_openai_api_key = os.getenv("AZ_OPENAI_API_KEY")
 
-        default_anthropic_api_key = (
-            os.getenv("ANTHROPIC_API_KEY")
-            if os.getenv("ANTHROPIC_API_KEY") is not None
-            else ""
-        )
-        with st.popover("🔐 Anthropic"):
-            anthropic_api_key = st.text_input(
-                "Introduce your Anthropic API Key (https://console.anthropic.com/)",
-                value=default_anthropic_api_key,
-                type="password",
-                key="anthropic_api_key",
-            )
-    else:
-        openai_api_key, anthropic_api_key = None, None
-        st.session_state.openai_api_key = None
-        az_openai_api_key = os.getenv("AZ_OPENAI_API_KEY")
-        st.session_state.az_openai_api_key = az_openai_api_key
+    # Store API keys in session state
+    st.session_state.openai_api_key = openai_api_key
+    st.session_state.anthropic_api_key = anthropic_api_key
+    st.session_state.az_openai_api_key = az_openai_api_key
 
 
 # --- Main Content ---
 # Checking if the user has introduced the OpenAI API Key, if not, a warning is displayed
-missing_openai = (
-    openai_api_key == "" or openai_api_key is None or "sk-" not in openai_api_key
-)
-missing_anthropic = anthropic_api_key == "" or anthropic_api_key is None
+missing_openai = not openai_api_key or "sk-" not in openai_api_key
+missing_anthropic = not anthropic_api_key
 if missing_openai and missing_anthropic and ("AZ_OPENAI_API_KEY" not in os.environ):
-    st.write("#")
-    st.warning("⬅️ Please introduce an API Key to continue...")
+    st.error("No API keys configured. Please contact the administrator.")
+    st.stop()
 
 else:
     # Sidebar
@@ -118,11 +90,18 @@ else:
             elif "azure-openai" in model:
                 models.append(model)
 
-        st.selectbox(
-            "🤖 Select a Model",
+        if not models:
+            st.error("No models available with current configuration")
+            st.stop()
+
+        selected_model = st.selectbox(
+            "🤖 Current Model",
             options=models,
             key="model",
+            disabled=True if len(models) == 1 else False,
         )
+
+        st.info(f"Using: {selected_model}")
 
         cols0 = st.columns(2)
         with cols0[0]:
