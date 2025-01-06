@@ -154,7 +154,7 @@ else:
 
         # File upload input for RAG with documents
         st.file_uploader(
-            "📄 Inject additional Data Sources",
+            "📄 Injest additional Data Sources",
             type=["pdf", "txt", "docx", "md"],
             accept_multiple_files=True,
             on_change=load_doc_to_db,
