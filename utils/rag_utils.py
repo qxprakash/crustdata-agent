@@ -13,7 +13,7 @@ from langchain_community.document_loaders import (
 # pip install docx2txt, pypdf
 from langchain_community.vectorstores import Chroma
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings, AzureOpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
@@ -111,19 +111,11 @@ def load_url_to_db():
 
 
 def initialize_vector_db(docs):
-    if "AZ_OPENAI_API_KEY" not in os.environ:
-        api_key = st.session_state.openai_api_key
-        if not api_key:
-            st.error("OpenAI API key not found in environment variables")
-            st.stop()
-        embedding = OpenAIEmbeddings(api_key=api_key)
-    else:
-        embedding = AzureOpenAIEmbeddings(
-            api_key=os.getenv("AZ_OPENAI_API_KEY"),
-            azure_endpoint=os.getenv("AZ_OPENAI_ENDPOINT"),
-            model="text-embedding-3-large",
-            openai_api_version="2024-02-15-preview",
-        )
+    api_key = st.session_state.openai_api_key
+    if not api_key:
+        st.error("OpenAI API key not found in environment variables")
+        st.stop()
+    embedding = OpenAIEmbeddings(api_key=api_key)
 
     vector_db = Chroma.from_documents(
         documents=docs,

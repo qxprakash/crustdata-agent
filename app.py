@@ -12,7 +12,7 @@ if os.name == "posix":
 
     sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
 
-from langchain_openai import ChatOpenAI, AzureChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain.schema import HumanMessage, AIMessage
 
@@ -101,8 +101,6 @@ else:
                 models.append(model)
             elif "anthropic" in model and not missing_anthropic:
                 models.append(model)
-            elif "azure-openai" in model:
-                models.append(model)
 
         if not models:
             st.error("No models available with current configuration")
@@ -178,16 +176,6 @@ else:
         llm_stream = ChatAnthropic(
             api_key=anthropic_api_key,
             model=st.session_state.model.split("/")[-1],
-            temperature=0.3,
-            streaming=True,
-        )
-    elif model_provider == "azure-openai":
-        llm_stream = AzureChatOpenAI(
-            azure_endpoint=os.getenv("AZ_OPENAI_ENDPOINT"),
-            openai_api_version="2024-02-15-preview",
-            model_name=st.session_state.model.split("/")[-1],
-            openai_api_key=os.getenv("AZ_OPENAI_API_KEY"),
-            openai_api_type="azure",
             temperature=0.3,
             streaming=True,
         )
