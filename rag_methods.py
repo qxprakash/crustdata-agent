@@ -110,7 +110,11 @@ def load_url_to_db():
 
 def initialize_vector_db(docs):
     if "AZ_OPENAI_API_KEY" not in os.environ:
-        embedding = OpenAIEmbeddings(api_key=st.session_state.openai_api_key)
+        api_key = st.session_state.openai_api_key
+        if not api_key:
+            st.error("OpenAI API key not found in environment variables")
+            st.stop()
+        embedding = OpenAIEmbeddings(api_key=api_key)
     else:
         embedding = AzureOpenAIEmbeddings(
             api_key=os.getenv("AZ_OPENAI_API_KEY"),

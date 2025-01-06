@@ -33,6 +33,10 @@ if "AZ_OPENAI_API_KEY" not in os.environ:
 else:
     MODELS = ["azure-openai/gpt-4o"]
 
+DEFAULT_RAG_URLS = [
+    "https://crustdata.notion.site/Crustdata-Discovery-And-Enrichment-API-c66d5236e8ea40df8af114f6d447ab48",
+    "https://crustdata.notion.site/Crustdata-Dataset-API-Detailed-Examples-b83bd0f1ec09452bb0c2cac811bba88c#ff964b2e316c49de8770e0bf2cf81f8a",
+]
 
 st.set_page_config(
     page_title="RAG LLM app?",
@@ -47,14 +51,37 @@ st.html("""<h2 style="text-align: center;">📚🔍 <i> crustdata chatbot </i> �
 
 
 # --- Initial Setup ---
+# Initialize all session state variables first
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
+
+if "default_urls_loaded" not in st.session_state:
+    st.session_state.default_urls_loaded = False
 
 if "rag_sources" not in st.session_state:
     st.session_state.rag_sources = []
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
+
+# Initialize API keys in session state
+if "openai_api_key" not in st.session_state:
+    st.session_state.openai_api_key = os.getenv("OPENAI_API_KEY")
+
+if "anthropic_api_key" not in st.session_state:
+    st.session_state.anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+
+if "az_openai_api_key" not in st.session_state:
+    st.session_state.az_openai_api_key = os.getenv("AZ_OPENAI_API_KEY")
+
+# Now handle the default URL loading
+if not st.session_state.default_urls_loaded:
+    with st.spinner("Loading default documentation..."):
+        for url in DEFAULT_RAG_URLS:
+            st.session_state.rag_url = url
+            load_url_to_db()
+        st.session_state.default_urls_loaded = True
+    st.session_state.rag_url = ""
 
 
 # --- Side Bar LLM API Tokens ---
@@ -127,7 +154,7 @@ else:
 
         # File upload input for RAG with documents
         st.file_uploader(
-            "📄 Upload a document",
+            "📄 Inject additional Data Sources",
             type=["pdf", "txt", "docx", "md"],
             accept_multiple_files=True,
             on_change=load_doc_to_db,
@@ -136,7 +163,7 @@ else:
 
         # URL input for RAG with websites
         st.text_input(
-            "🌐 Introduce a URL",
+            "🌐 Add Data Sources From URL",
             placeholder="https://example.com",
             on_change=load_url_to_db,
             key="rag_url",
