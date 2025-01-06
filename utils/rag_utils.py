@@ -18,6 +18,8 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 
+from utils.prompts import RAG_PROMPT
+
 dotenv.load_dotenv()
 
 os.environ["USER_AGENT"] = "myagent"
@@ -157,28 +159,51 @@ def _split_and_load_docs(docs):
         st.session_state.vector_db.add_documents(document_chunks)
 
 
-# --- Retrieval Augmented Generation (RAG) Phase ---
-
-
 def _get_context_retriever_chain(vector_db, llm):
-    retriever = vector_db.as_retriever()
+    retriever = vector_db.as_retriever(
+        search_type="similarity",
+        search_kwargs={"k": 3},  # Retrieve top 3 most relevant chunks
+    )
+
+    print("===================== get context retriever chain  ================")
+
+    # def debug_and_retrieve(query):
+    #     docs = retriever.aget_relevant_documents(query)
+    #     print("\n=== Retrieved Documents ===")
+    #     for i, doc in enumerate(docs, 1):
+    #         print(f"\nDocument {i}:")
+    #         print(f"Content: {doc.page_content[:200]}...")
+    #         print(f"Source: {doc.metadata.get('source', 'Unknown')}")
+    #         print("-" * 50)
+    #     return docs
+
     prompt = ChatPromptTemplate.from_messages(
         [
             MessagesPlaceholder(variable_name="messages"),
             ("user", "{input}"),
-            (
-                "user",
-                "Given the above conversation, generate a search query to look up in order to get inforamtion relevant to the conversation, focusing on the most recent messages.",
-            ),
+            ("user", RAG_PROMPT),
         ]
     )
-    retriever_chain = create_history_aware_retriever(llm, retriever, prompt)
+
+    print(f"prompt for retriever: {prompt}")
+
+    print(f"retriever: {retriever}")
+    # Create the retriever chain with the debug wrapper
+    retriever_chain = create_history_aware_retriever(
+        llm,
+        retriever,
+        prompt,
+    )
 
     return retriever_chain
 
 
 def get_conversational_rag_chain(llm):
     retriever_chain = _get_context_retriever_chain(st.session_state.vector_db, llm)
+    print("\n=== Retriever Chain Output ===")
+    print(f"Type: {type(retriever_chain)}")
+    print(f"Content: {retriever_chain}")
+    print("================================\n")
 
     prompt = prompt = ChatPromptTemplate.from_messages(
         [
@@ -207,12 +232,20 @@ def get_conversational_rag_chain(llm):
 
 
 def stream_llm_rag_response(llm_stream, messages):
+    print("\n=== RAG Request Started ===")
+    print(f"User Query: {messages[-1].content}")
+
     conversation_rag_chain = get_conversational_rag_chain(llm_stream)
     response_message = "*(RAG Response)*\n"
+
+    # Add timing information
+    start_time = time()
+
     for chunk in conversation_rag_chain.pick("answer").stream(
         {"messages": messages[:-1], "input": messages[-1].content}
     ):
         response_message += chunk
         yield chunk
 
-    st.session_state.messages.append({"role": "assistant", "content": response_message})
+    print(f"\nTotal RAG processing time: {time() - start_time:.2f} seconds")
+    print("=== RAG Request Completed ===\n")
