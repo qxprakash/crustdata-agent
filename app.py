@@ -5,7 +5,7 @@ import uuid
 
 from utils.constants import DEFAULT_RAG_URLS, MODELS
 
-# check if it's linux so it works on Streamlit Cloud
+
 if os.name == "posix":
     __import__("pysqlite3")
     import sys
@@ -139,7 +139,7 @@ else:
 
         # File upload input for RAG with documents
         st.file_uploader(
-            "📄 Injest additional Data Sources",
+            "📄 Ingest additional Data Sources",
             type=["pdf", "txt", "docx", "md"],
             accept_multiple_files=True,
             on_change=load_doc_to_db,
